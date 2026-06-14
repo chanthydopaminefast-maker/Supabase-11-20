@@ -2932,7 +2932,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
               setExpandedTopics(prev => ({ ...prev, [topic.id]: !prev[topic.id] }));
             }
           }} 
-          className={`relative group flex items-center justify-between p-2 my-1 rounded-xl cursor-pointer border transition-all select-none ${openMenuId === topic.id ? 'z-[100]' : 'z-10'} ${
+          className={`relative group flex items-center justify-between p-2 my-1 rounded-xl cursor-pointer border transition-all select-none touch-pan-y ${openMenuId === topic.id ? 'z-[100]' : 'z-10'} ${
             isSelected 
               ? `${style.activeBg} ${style.border} ${style.text} shadow-sm scale-[1.01]` 
               : `bg-white/40 dark:bg-slate-900/10 ${style.border} ${style.text} hover:scale-[1.01] hover:bg-white/70`

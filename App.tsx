@@ -443,8 +443,9 @@ const App: React.FC = () => {
     setData(newData);
     storage.setItem('dps_data', JSON.stringify(newData));
     if (currentUser?.uid) {
-      const { deleteStudent } = await import('./services/supabase');
+      const { deleteStudent, saveData } = await import('./services/supabase');
       await deleteStudent(currentUser.uid, id);
+      await saveData(currentUser.uid, newData);
     }
   };
 
@@ -481,7 +482,7 @@ const App: React.FC = () => {
     storage.setItem('dps_data', JSON.stringify(newData));
 
     if (currentUser?.uid) {
-      const { deleteTopic, saveTopic } = await import('./services/supabase');
+      const { deleteTopic, saveTopic, saveData } = await import('./services/supabase');
       if (isRoot) {
         await deleteTopic(currentUser.uid, id, category);
       } else {
@@ -491,6 +492,7 @@ const App: React.FC = () => {
           await saveTopic(currentUser.uid, updatedRoot, category);
         }
       }
+      await saveData(currentUser.uid, newData);
     }
   };
 
