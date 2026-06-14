@@ -3178,8 +3178,8 @@ export const SelfLearningTable: React.FC<SelfLearningTableProps> = ({ data, onUp
       const link = window.location.origin + window.location.pathname + '?share=' + shareId;
       setGeneratedShareLink(link);
     } catch (error: any) {
-      console.error("Firestore sharing failed:", error);
-      setCloudShareError("Failed to create cloud link. Your folder may be too large, or you may be offline. Please use the Download or Copy options below!");
+      console.error("Supabase sharing failed:", error);
+      setCloudShareError(`Failed to create cloud link. Error: ${error.message || String(error)}. Make sure you have run the latest SQL setup script to create the dps_shares table!`);
     } finally {
       setIsCloudShareLoading(false);
     }
