@@ -298,6 +298,112 @@ export const SelfLearningTable: React.FC<SelfLearningTableProps> = ({ data, onUp
   const editorRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Custom Touch-Friendly Scrollbar Hooks
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollHeight, setScrollHeight] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [clientHeight, setClientHeight] = useState(0);
+  
+  const isDraggingScrollbar = useRef(false);
+  const startDragY = useRef(0);
+  const startScrollTop = useRef(0);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    setScrollTop(target.scrollTop);
+    setScrollHeight(target.scrollHeight);
+    setClientHeight(target.clientHeight);
+  };
+
+  const handleScrollbarDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    isDraggingScrollbar.current = true;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    startDragY.current = clientY;
+    startScrollTop.current = container.scrollTop;
+    
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const updateSizes = () => {
+      setScrollTop(container.scrollTop);
+      setScrollHeight(container.scrollHeight);
+      setClientHeight(container.clientHeight);
+    };
+    
+    updateSizes();
+    const observer = new ResizeObserver(updateSizes);
+    observer.observe(container);
+    
+    window.addEventListener('resize', updateSizes);
+    
+    // Periodically sync size on a delay to capture rendering lag
+    const interval = setInterval(updateSizes, 500);
+    
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateSizes);
+      clearInterval(interval);
+    };
+  }, [isSidebarOpen, sidebarFilter, searchTerm, data]);
+
+  useEffect(() => {
+    const handleDragMove = (e: MouseEvent | TouchEvent) => {
+      if (!isDraggingScrollbar.current) return;
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      if ('touches' in e) {
+        if (e.cancelable) e.preventDefault();
+      }
+      
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const deltaY = clientY - startDragY.current;
+      
+      const scrollHeightVal = container.scrollHeight;
+      const clientHeightVal = container.clientHeight;
+      const currentMinThumbHeight = 44; // Touch-friendly height
+      const currentThumbHeight = Math.max((clientHeightVal / scrollHeightVal) * clientHeightVal, currentMinThumbHeight);
+      const maxThumbTopVal = clientHeightVal - currentThumbHeight;
+      const maxScrollTopVal = scrollHeightVal - clientHeightVal;
+      
+      if (maxThumbTopVal <= 0) return;
+      
+      const scrollDelta = (deltaY / maxThumbTopVal) * maxScrollTopVal;
+      container.scrollTop = startScrollTop.current + scrollDelta;
+    };
+    
+    const handleDragEnd = () => {
+      isDraggingScrollbar.current = false;
+      document.body.style.userSelect = '';
+    };
+    
+    window.addEventListener('mousemove', handleDragMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    window.addEventListener('touchmove', handleDragMove, { passive: false });
+    window.addEventListener('touchend', handleDragEnd);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleDragMove);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleDragMove);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, []);
+
+  const maxScrollTop = scrollHeight - clientHeight;
+  const scrollRatio = maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
+  const minThumbHeight = 44; // Highly touchable
+  const thumbHeight = Math.max((clientHeight / scrollHeight) * clientHeight, minThumbHeight);
+  const maxThumbTop = clientHeight - thumbHeight;
+  const thumbTop = scrollRatio * maxThumbTop;
+
   const exportPDF = async (customStyle?: 'executive' | 'handwritten' | 'minimalist' | 'academic' | 'retro' | 'medium_bg' | 'light_bg' | 'no_bg') => {
     if (!editorRef.current || !selectedTopic) return;
     
@@ -3714,129 +3820,182 @@ export const SelfLearningTable: React.FC<SelfLearningTableProps> = ({ data, onUp
           </button>
         </div>
 
-        {/* Unifed Scrollable Column containing action buttons, search, topics, and folder archive */}
-        <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-3 max-[767px]:landscape:space-y-2.5 custom-scrollbar flex flex-col min-h-0 overscroll-contain pb-24 touch-pan-y">
-          <div className="flex flex-col gap-2.5 shrink-0">
-            {/* Equal sized Action Buttons Grid */}
-            <div className="grid grid-cols-2 gap-2 w-full">
-              <button 
-                onClick={() => addTopic()} 
-                className="py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1.5 hover:from-emerald-600 hover:to-emerald-700 shadow-xl shadow-emerald-500/20 active:scale-95 transition-all whitespace-nowrap animate-in fade-in"
-              >
-                <Plus size={14} /> Add Topic
-              </button>
-              
-              <button 
-                onClick={() => setIsImportModalOpen(true)} 
-                className="py-2.5 bg-sky-600 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1 hover:bg-sky-700 shadow-xl shadow-sky-500/20 active:scale-95 transition-all whitespace-nowrap animate-in fade-in"
-                title="Import Topic Folder from JSON or Clipboard"
-              >
-                <FileUp size={14} /> Import
-              </button>
-
-              {!isSelectedTopicPlan && (
-                <>
-                  <button 
-                    onClick={generateStudyPlan}
-                    disabled={isStudyPlanLoading || isActionPlanLoading || isAILoading}
-                    className="py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1 hover:from-indigo-600 hover:to-purple-600 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all whitespace-nowrap disabled:opacity-50 animate-in fade-in"
-                    title={selectedTopic ? `Generate dynamic Study Plan for: ${selectedTopic.title}` : `Generate general Study Plan for all topics`}
-                  >
-                    {isStudyPlanLoading ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                    Plan: Study
-                  </button>
-
-                  <button 
-                    onClick={generateActionPlan}
-                    disabled={isStudyPlanLoading || isActionPlanLoading || isAILoading}
-                    className="py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1 hover:from-orange-600 hover:to-amber-600 shadow-xl shadow-orange-500/20 active:scale-95 transition-all whitespace-nowrap disabled:opacity-50 animate-in fade-in"
-                    title={selectedTopic ? `Generate custom Action Plan for: ${selectedTopic.title}` : `Select a topic to generate Action Plan`}
-                  >
-                    {isActionPlanLoading ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
-                    Plan: Action
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Search Bar under action buttons */}
-            <div className="relative w-full">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search topics..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-xs"
+        {/* Relative container allowing fixed scroll track positioning on the right */}
+        <div className="flex-1 flex flex-col relative overflow-hidden w-full min-h-0">
+          {/* Unifed Scrollable Column containing action buttons, search, topics, and folder archive */}
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            onTouchStart={() => {
+              const container = scrollContainerRef.current;
+              if (container) {
+                setScrollTop(container.scrollTop);
+                setScrollHeight(container.scrollHeight);
+                setClientHeight(container.clientHeight);
+              }
+            }}
+            onMouseEnter={() => {
+              const container = scrollContainerRef.current;
+              if (container) {
+                setScrollTop(container.scrollTop);
+                setScrollHeight(container.scrollHeight);
+                setClientHeight(container.clientHeight);
+              }
+            }}
+            className="flex-1 overflow-y-auto pr-3.5 space-y-3 max-[767px]:landscape:space-y-2.5 no-scrollbar flex flex-col h-full w-full"
+          >
+            <div className="flex flex-col gap-2.5 shrink-0">
+              {/* Equal sized Action Buttons Grid */}
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <button 
+                  onClick={() => addTopic()} 
+                  className="py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1.5 hover:from-emerald-600 hover:to-emerald-700 shadow-xl shadow-emerald-500/20 active:scale-95 transition-all whitespace-nowrap animate-in fade-in"
                 >
-                  ✕
+                  <Plus size={14} /> Add Topic
                 </button>
-              )}
+                
+                <button 
+                  onClick={() => setIsImportModalOpen(true)} 
+                  className="py-2.5 bg-sky-600 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1 hover:bg-sky-700 shadow-xl shadow-sky-500/20 active:scale-95 transition-all whitespace-nowrap animate-in fade-in"
+                  title="Import Topic Folder from JSON or Clipboard"
+                >
+                  <FileUp size={14} /> Import
+                </button>
+
+                {!isSelectedTopicPlan && (
+                  <>
+                    <button 
+                      onClick={generateStudyPlan}
+                      disabled={isStudyPlanLoading || isActionPlanLoading || isAILoading}
+                      className="py-2.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1 hover:from-indigo-600 hover:to-purple-600 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all whitespace-nowrap disabled:opacity-50 animate-in fade-in"
+                      title={selectedTopic ? `Generate dynamic Study Plan for: ${selectedTopic.title}` : `Generate general Study Plan for all topics`}
+                    >
+                      {isStudyPlanLoading ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                      Plan: Study
+                    </button>
+
+                    <button 
+                      onClick={generateActionPlan}
+                      disabled={isStudyPlanLoading || isActionPlanLoading || isAILoading}
+                      className="py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl text-[10px] font-black flex items-center justify-center gap-1 hover:from-orange-600 hover:to-amber-600 shadow-xl shadow-orange-500/20 active:scale-95 transition-all whitespace-nowrap disabled:opacity-50 animate-in fade-in"
+                      title={selectedTopic ? `Generate custom Action Plan for: ${selectedTopic.title}` : `Select a topic to generate Action Plan`}
+                    >
+                      {isActionPlanLoading ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                      Plan: Action
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Search Bar under action buttons */}
+              <div className="relative w-full">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search topics..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2.5 bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-xs"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Files / Stars tab control in ONE line right under Search */}
+              <div className="flex bg-slate-100 dark:bg-slate-900/60 p-1 rounded-2xl w-full border border-slate-200/40 dark:border-slate-800/40">
+                <button
+                  onClick={() => setSidebarFilter('files')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                    sidebarFilter === 'files'
+                      ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-705 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Folder size={12} className={sidebarFilter === 'files' ? 'text-indigo-500' : 'text-slate-400'} />
+                  <span>Files</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${sidebarFilter === 'files' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-200 dark:bg-slate-800/80 text-slate-600'}`}>
+                    {activeTopics.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setSidebarFilter('stars')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                    sidebarFilter === 'stars'
+                      ? 'bg-amber-500 dark:bg-amber-600 text-white shadow-sm font-black'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-705 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Star size={12} fill={sidebarFilter === 'stars' ? "currentColor" : "none"} className={sidebarFilter === 'stars' ? 'text-white' : 'text-amber-500'} />
+                  <span>Stars</span>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${sidebarFilter === 'stars' ? 'bg-amber-605 text-white' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'}`}>
+                    {archivedTopics.length}
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* Files / Stars tab control in ONE line right under Search */}
-            <div className="flex bg-slate-100 dark:bg-slate-900/60 p-1 rounded-2xl w-full border border-slate-200/40 dark:border-slate-800/40">
-              <button
-                onClick={() => setSidebarFilter('files')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                  sidebarFilter === 'files'
-                    ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm font-black'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-705 dark:hover:text-slate-300'
-                }`}
+            {/* Active Folder view based on filter */}
+            {sidebarFilter === 'files' ? (
+              <div 
+                className={`space-y-1 min-h-[50px] outline-none rounded-xl transition-all ${dragOverTopicId === null && draggedTopicId ? 'ring-2 ring-indigo-400/50 bg-indigo-50/30' : ''}`}
+                onDragOver={(e) => handleDragOver(e, null)}
+                onDragLeave={(e) => handleDragLeave(e, null)}
+                onDrop={(e) => handleDrop(e, null)}
               >
-                <Folder size={12} className={sidebarFilter === 'files' ? 'text-indigo-500' : 'text-slate-400'} />
-                <span>Files</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${sidebarFilter === 'files' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400' : 'bg-slate-200 dark:bg-slate-800/80 text-slate-600'}`}>
-                  {activeTopics.length}
-                </span>
-              </button>
-              <button
-                onClick={() => setSidebarFilter('stars')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                  sidebarFilter === 'stars'
-                    ? 'bg-amber-500 dark:bg-amber-600 text-white shadow-sm font-black'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-705 dark:hover:text-slate-300'
-                }`}
-              >
-                <Star size={12} fill={sidebarFilter === 'stars' ? "currentColor" : "none"} className={sidebarFilter === 'stars' ? 'text-white' : 'text-amber-500'} />
-                <span>Stars</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${sidebarFilter === 'stars' ? 'bg-amber-605 text-white' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'}`}>
-                  {archivedTopics.length}
-                </span>
-              </button>
-            </div>
+                {filteredTopics.length > 0 ? (
+                  filteredTopics.map(t => renderTopic(t))
+                ) : (
+                  <div className="text-center py-6 text-xs text-slate-400 select-none">
+                    {searchTerm ? 'No matching topics found' : 'No active topics yet'}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-1.5 pl-0.5">
+                {filteredArchivedTopics.length > 0 ? (
+                  filteredArchivedTopics.map(t => renderTopic(t))
+                ) : (
+                  <div className="text-center py-6 text-xs text-slate-400 select-none">
+                    {searchTerm ? 'No matching favorite topics' : 'Stars is empty'}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Active Folder view based on filter */}
-          {sidebarFilter === 'files' ? (
+          {/* Always Visible Premium Touch-Friendly Draggable Scroll Bar on the right edge */}
+          {scrollHeight > clientHeight + 3 && (
             <div 
-              className={`space-y-1 min-h-[50px] outline-none rounded-xl transition-all ${dragOverTopicId === null && draggedTopicId ? 'ring-2 ring-indigo-400/50 bg-indigo-50/30' : ''}`}
-              onDragOver={(e) => handleDragOver(e, null)}
-              onDragLeave={(e) => handleDragLeave(e, null)}
-              onDrop={(e) => handleDrop(e, null)}
+              className="absolute right-0.5 top-2 bottom-2 w-3 rounded-full bg-slate-200/60 dark:bg-slate-800/80 hover:bg-slate-300/80 dark:hover:bg-slate-705 cursor-pointer pointer-events-auto z-40 select-none transition-all border border-slate-300/40 dark:border-slate-700/40 shadow-inner flex flex-col justify-start"
+              onClick={(e) => {
+                if (e.target === e.currentTarget && scrollContainerRef.current) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const clickY = e.clientY - rect.top;
+                  const percentage = clickY / rect.height;
+                  scrollContainerRef.current.scrollTop = percentage * scrollContainerRef.current.scrollHeight - rect.height / 2;
+                }
+              }}
             >
-              {filteredTopics.length > 0 ? (
-                filteredTopics.map(t => renderTopic(t))
-              ) : (
-                <div className="text-center py-6 text-xs text-slate-400 select-none">
-                  {searchTerm ? 'No matching topics found' : 'No active topics yet'}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-1.5 pl-0.5">
-              {filteredArchivedTopics.length > 0 ? (
-                filteredArchivedTopics.map(t => renderTopic(t))
-              ) : (
-                <div className="text-center py-6 text-xs text-slate-400 select-none">
-                  {searchTerm ? 'No matching favorite topics' : 'Stars is empty'}
-                </div>
-              )}
+              <div 
+                style={{
+                  height: `${thumbHeight}px`,
+                  transform: `translateY(${thumbTop}px)`,
+                }}
+                onMouseDown={handleScrollbarDragStart}
+                onTouchStart={handleScrollbarDragStart}
+                className="w-full rounded-full bg-gradient-to-b from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 hover:scale-105 active:scale-110 transition-all cursor-grab active:cursor-grabbing border border-white/20 shadow-md shadow-emerald-500/20 flex flex-col items-center justify-center gap-0.5 py-1.5 shrink-0"
+              >
+                {/* Visual Grab Indicators on thumb */}
+                <div className="w-1 h-0.5 bg-white/85 rounded-full shrink-0" />
+                <div className="w-1.5 h-0.5 bg-white/85 rounded-full shrink-0" />
+                <div className="w-1 h-0.5 bg-white/85 rounded-full shrink-0" />
+              </div>
             </div>
           )}
         </div>
