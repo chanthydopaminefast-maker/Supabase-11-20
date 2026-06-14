@@ -1904,20 +1904,20 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ data, onUpdate, onUp
       {/* Styled scrollbar and planning checklist css */}
       <style>{`
         .custom-scrollbar-orange::-webkit-scrollbar {
-          height: 12px;
-          width: 12px;
+          height: 10px;
+          width: 10px;
         }
         .custom-scrollbar-orange::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 5px;
         }
         .custom-scrollbar-orange::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #22c55e 50%, #a855f7 50%, #a855f7 75%, #f97316 75%);
-          border-radius: 10px;
-          border: 2px solid rgba(255, 255, 255, 0.05);
+          background: rgba(249, 115, 22, 0.3);
+          border-radius: 5px;
+          border: 2px solid rgba(255, 255, 255, 0.02);
         }
         .custom-scrollbar-orange::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #16a34a 50%, #9333ea 50%, #9333ea 75%, #ea580c 75%);
+          background: rgba(249, 115, 22, 0.5);
         }
         .mini-planner-note ul {
           list-style-type: none !important;

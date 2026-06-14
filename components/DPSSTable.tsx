@@ -2932,7 +2932,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
               setExpandedTopics(prev => ({ ...prev, [topic.id]: !prev[topic.id] }));
             }
           }} 
-          className={`relative group flex items-center justify-between p-2 my-1 rounded-xl cursor-pointer border transition-all select-none touch-pan-y ${openMenuId === topic.id ? 'z-[100]' : 'z-10'} ${
+          className={`relative group flex items-center justify-between p-2 my-1 rounded-xl cursor-pointer border transition-all select-none ${openMenuId === topic.id ? 'z-[100]' : 'z-10'} ${
             isSelected 
               ? `${style.activeBg} ${style.border} ${style.text} shadow-sm scale-[1.01]` 
               : `bg-white/40 dark:bg-slate-900/10 ${style.border} ${style.text} hover:scale-[1.01] hover:bg-white/70`
@@ -3170,8 +3170,8 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
           bg-white/95 md:bg-white/10 backdrop-blur-3xl md:backdrop-blur-md 
           rounded-r-3xl md:rounded-3xl shrink-0 transition-all duration-300 transform
           ${isSidebarOpen 
-            ? 'p-3 md:p-6 border-r md:border border-white/20 translate-x-0 opacity-100 flex flex-col gap-3 md:gap-4 max-[767px]:landscape:gap-2 relative flex-col' 
-            : 'p-0 border-none -translate-x-full pointer-events-none opacity-0 hidden overflow-hidden shadow-none md:hidden w-0'
+            ? 'p-3 md:p-6 border-r md:border border-white/20 translate-x-0 opacity-100 flex flex-col gap-3 md:gap-4 max-[767px]:landscape:gap-2 relative select-none' 
+            : 'p-0 border-none -translate-x-full pointer-events-none opacity-0 select-none hidden overflow-hidden shadow-none md:hidden w-0'
           }
         `}
       >
@@ -3186,7 +3186,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
         </div>
 
         {/* Unifed Scrollable Column containing action buttons, search, topics, and folder archive */}
-        <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-3 max-[767px]:landscape:space-y-2.5 custom-scrollbar flex flex-col">
+        <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-3 max-[767px]:landscape:space-y-2.5 custom-scrollbar flex flex-col min-h-0 overscroll-contain pb-24 touch-pan-y">
           <div className="flex flex-col gap-2.5 shrink-0">
             {/* Equal sized Action Buttons Grid */}
             <div className="grid grid-cols-2 gap-2 w-full animate-in fade-in">
@@ -4122,6 +4122,24 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
                   
                   return (
                     <style dangerouslySetInnerHTML={{ __html: `
+                      .custom-scrollbar::-webkit-scrollbar {
+                        width: 8px;
+                        height: 8px;
+                      }
+                      .custom-scrollbar::-webkit-scrollbar-track {
+                        background: rgba(0, 0, 0, 0.05);
+                        border-radius: 10px;
+                      }
+                      .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background: linear-gradient(180deg, #FF4500 0%, #32CD32 20%, #800080 40%, #FF0000 60%, #006400 80%, #301934 100%);
+                        border-radius: 10px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                      }
+                      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background: linear-gradient(180deg, #FF6A00 0%, #39FF14 20%, #A020F0 40%, #FF2400 60%, #008000 80%, #4B0082 100%);
+                        box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+                      }
+
                       .editor-content {
                         color: ${editorTextColor};
                       }
