@@ -3715,7 +3715,7 @@ export const SelfLearningTable: React.FC<SelfLearningTableProps> = ({ data, onUp
         </div>
 
         {/* Unifed Scrollable Column containing action buttons, search, topics, and folder archive */}
-        <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-3 max-[767px]:landscape:space-y-2.5 custom-scrollbar flex flex-col">
+        <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-3 max-[767px]:landscape:space-y-2.5 custom-scrollbar flex flex-col min-h-0 overscroll-contain pb-24 touch-pan-y">
           <div className="flex flex-col gap-2.5 shrink-0">
             {/* Equal sized Action Buttons Grid */}
             <div className="grid grid-cols-2 gap-2 w-full">
