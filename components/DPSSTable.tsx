@@ -46,7 +46,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
   const isTooLargeForCloud = (topic: any): boolean => {
     try {
       const bytes = JSON.stringify(topic).length;
-      return bytes >= 1024 * 1024; // 1MB Firestore limit
+      return false; // No 1MB cloud limit anymore
     } catch (e) {
       return false;
     }
@@ -1868,7 +1868,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
       setGeneratedShareLink(link);
     } catch (error: any) {
       console.error("Firestore sharing failed:", error);
-      setCloudShareError("Failed to create cloud link. Your folder may exceed the 1MB limit, or you may be offline. Please use the Download or Copy options below!");
+      setCloudShareError("Failed to create cloud link. Your folder may be too large, or you may be offline. Please use the Download or Copy options below!");
     } finally {
       setIsCloudShareLoading(false);
     }
@@ -4511,7 +4511,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
               <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-450 rounded-xl text-xs flex flex-col gap-1">
                 <p className="font-extrabold flex items-center gap-1.5 uppercase tracking-wide">⚡ Smart Compression & Chunking Enabled</p>
                 <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
-                  This folder is <strong>{getTopicSizeString(sharingTopic)}</strong>. To support this size over the standard 1MB cloud limit, our system will automatically compress and split the data into smaller chunks so that you can share it seamlessly!
+                  This folder is <strong>{getTopicSizeString(sharingTopic)}</strong>. Supabase handles large payloads, so you can share it seamlessly!
                 </p>
               </div>
             )}
@@ -4541,7 +4541,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
             <div className="border-t border-slate-150 dark:border-slate-800 pt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Option 3: Generates Cloud Link</h5>
-                <span className="text-[9px] text-slate-400 font-medium">Max 1MB limit</span>
+                {/* Limit removed */}
               </div>
 
               {!generatedShareLink ? (
