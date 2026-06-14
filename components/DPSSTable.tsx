@@ -129,10 +129,14 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
     if (saved) {
       const parsed = parseInt(saved, 10);
       if (!isNaN(parsed) && parsed >= 160 && parsed <= 600) {
+        // If it was saved as 200 on mobile, upgrade it to a fully-spaced modern width
+        if (window.innerWidth < 768 && parsed < 280) {
+          return Math.min(window.innerWidth - 16, 320);
+        }
         return parsed;
       }
     }
-    return window.innerWidth < 768 ? 200 : 300;
+    return window.innerWidth < 768 ? Math.min(window.innerWidth - 16, 320) : 300;
   });
 
   useEffect(() => {
@@ -251,11 +255,16 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
     };
   }, []);
 
-  const maxScrollTop = scrollHeight - clientHeight;
+  const safeScrollHeight = scrollHeight || 1;
+  const safeClientHeight = clientHeight || 1;
+  const maxScrollTop = Math.max(0, scrollHeight - clientHeight);
   const scrollRatio = maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
   const minThumbHeight = 44; // Highly touchable
-  const thumbHeight = Math.max((clientHeight / scrollHeight) * clientHeight, minThumbHeight);
-  const maxThumbTop = clientHeight - thumbHeight;
+  const thumbHeight = Math.min(
+    clientHeight,
+    Math.max((safeClientHeight / safeScrollHeight) * safeClientHeight, minThumbHeight)
+  );
+  const maxThumbTop = Math.max(0, clientHeight - thumbHeight);
   const thumbTop = scrollRatio * maxThumbTop;
   const isResizing = useRef(false);
   const isResizingTableCol = useRef(false);
@@ -3423,6 +3432,7 @@ export const DPSSTable: React.FC<DPSSTableProps> = ({ data, onUpdate, onUpdateTo
           {/* Always Visible Premium Touch-Friendly Draggable Scroll Bar on the right edge */}
           {scrollHeight > clientHeight + 3 && (
             <div 
+              id="notes-custom-scrollbar"
               className="absolute right-0.5 top-2 bottom-2 w-3 rounded-full bg-slate-200/60 dark:bg-slate-800/80 hover:bg-slate-300/80 dark:hover:bg-slate-705 cursor-pointer pointer-events-auto z-40 select-none transition-all border border-slate-300/40 dark:border-slate-700/40 shadow-inner flex flex-col justify-start"
               onClick={(e) => {
                 if (e.target === e.currentTarget && scrollContainerRef.current) {
