@@ -1003,18 +1003,20 @@ Keep the advice direct, mature, and completely focused on human performance. Avo
 
       <style>{`
         .custom-scrollbar-green::-webkit-scrollbar {
-          width: 8px;
+          width: 12px;
+          height: 12px;
         }
         .custom-scrollbar-green::-webkit-scrollbar-track {
           background: rgba(255, 255, 255, 0.05);
-          border-radius: 4px;
+          border-radius: 10px;
         }
         .custom-scrollbar-green::-webkit-scrollbar-thumb {
-          background: rgba(16, 185, 129, 0.3);
-          border-radius: 4px;
+          background: linear-gradient(to bottom, #22c55e 50%, #a855f7 50%, #a855f7 75%, #f97316 75%);
+          border-radius: 10px;
+          border: 2px solid rgba(255, 255, 255, 0.05);
         }
         .custom-scrollbar-green::-webkit-scrollbar-thumb:hover {
-          background: rgba(16, 185, 129, 0.5);
+          background: linear-gradient(to bottom, #16a34a 50%, #9333ea 50%, #9333ea 75%, #ea580c 75%);
         }
       `}</style>
 

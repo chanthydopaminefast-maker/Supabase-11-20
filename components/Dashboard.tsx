@@ -829,19 +829,20 @@ const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       </div>
       <style>{`
         .custom-scrollbar-amber::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
+          width: 12px;
+          height: 12px;
         }
         .custom-scrollbar-amber::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.02);
+          background: rgba(241, 245, 249, 0.1);
           border-radius: 10px;
         }
         .custom-scrollbar-amber::-webkit-scrollbar-thumb {
-          background: rgba(245, 158, 11, 0.15);
+          background: linear-gradient(to bottom, #22c55e 50%, #a855f7 50%, #a855f7 75%, #f97316 75%);
           border-radius: 10px;
+          border: 2px solid rgba(255, 255, 255, 0.2);
         }
         .custom-scrollbar-amber::-webkit-scrollbar-thumb:hover {
-          background: rgba(245, 158, 11, 0.45);
+          background: linear-gradient(to bottom, #16a34a 50%, #9333ea 50%, #9333ea 75%, #ea580c 75%);
         }
       `}</style>
     </div>
